@@ -1,0 +1,3 @@
+rule,roc_auc,count
+"No Advertising: Spam, referral links, unsolicited advertising, and promotional content are not allowed.",0.8798115477145149,202
+No legal advice: Do not offer or request legal advice.,0.7621031746031746,204

@@ -23,3 +23,13 @@ def split_data(train, seed=42):
 def make_text(frame):
     """Kural ve yorumu tek bir model girdisine dönüştür."""
     return "RULE: " + frame["rule"].fillna("") + " COMMENT: " + frame["body"].fillna("")
+
+
+def heldout_split(frame, seed=42):
+    """%20 stratified test; testteki yorumları eğitimden çıkar."""
+    from sklearn.model_selection import train_test_split
+    development, heldout = train_test_split(
+        frame, test_size=0.2, random_state=seed, stratify=frame['rule_violation'])
+    test_groups = set(heldout['body'].fillna('').str.lower().str.strip())
+    overlap = development['body'].fillna('').str.lower().str.strip().isin(test_groups)
+    return development.loc[~overlap].copy(), heldout.copy(), int(overlap.sum())
