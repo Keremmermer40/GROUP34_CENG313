@@ -1,21 +1,97 @@
-﻿# GROUP34_CENG313 — Jigsaw: Community Rule Violation Prediction
+﻿# Jigsaw Community Rule Violation Prediction
 
-This project predicts the probability that a Reddit comment violates a given community rule. The target is `rule_violation`: `1` indicates a violation and `0` indicates no violation.
+**Course:** CENG313 — Introduction to Data Science  
+**Group:** 34
 
-## Group 34
+We investigate whether a Reddit comment violates a specified community rule. Our project combines exploratory data analysis with simple text classification models and evaluates their predictions on a local held-out split.
 
-| Full name | Student ID | GitHub username |
+## Team
+
+| Name | Student ID | GitHub |
 |---|---|---|
-| Hacı Kerem Mermer | 23118080769 | Keremmermer40 |
-| Necdet Atakan Aydın | 24118080793 | necdetatakanaydin |
+| Hacı Kerem Mermer | 23118080769 | [Keremmermer40](https://github.com/Keremmermer40) |
+| Necdet Atakan Aydın | 24118080793 | [necdetatakanaydin](https://github.com/necdetatakanaydin) |
 
-[Competition](https://www.kaggle.com/competitions/jigsaw-agile-community-rules) · [Course instructions](https://github.com/ceng313-2026)
+## Problem and Data
 
-## Data and setup
+We use the [Jigsaw — Agile Community Rules Classification](https://www.kaggle.com/competitions/jigsaw-agile-community-rules) dataset. Each prediction concerns a comment and a particular rule, rather than the comment's general toxicity.
 
-Accept the competition rules on Kaggle, download `train.csv`, `test.csv`, and `sample_submission.csv` from the **Data** tab, and place them in the local `data/` directory. Do not commit the dataset. The training data used here contains **2,029 rows**, while the sample test data contains **10 rows**. The sample test data is unlabeled and does not represent the full hidden competition test set.
+- **Target:** `rule_violation`, where `1` indicates a violation and `0` indicates compliance.
+- **Training data:** 2,029 labeled rows covering two rules.
+- **Available fields:** comment text, rule text, subreddit, positive and negative examples, and a row identifier.
+- **Sample test data:** 10 unlabeled rows; this is not the full hidden competition test set.
 
-Run the following commands from the project root in Windows PowerShell:
+The notebook examines missing values, duplicate comments, class balance, rule and subreddit distributions, and comment lengths. Each exploratory plot is accompanied by an interpretation.
+
+To obtain the data, accept the competition rules on Kaggle and download the files from the **Data** tab. Place `train.csv`, `test.csv`, and `sample_submission.csv` in a local `data/` folder. Dataset files are excluded from version control.
+
+## Baseline Approach
+
+We combine the rule and comment as `RULE: <rule> COMMENT: <comment>`. Missing text is replaced with an empty string. The baseline does not use row identifiers, subreddit names, or example comments as model features.
+
+Three models are compared:
+
+| Model | Representation |
+|---|---|
+| Dummy classifier | Class-prior reference |
+| Word TF-IDF + Logistic Regression | Word n-grams of length 1–2 |
+| Character TF-IDF + Logistic Regression | Character n-grams of length 3–5 using `char_wb` |
+
+Both TF-IDF models use `min_df=2` and up to 30,000 features. Vectorizers are fitted only on the training partition of each split. Detailed preprocessing decisions and model parameters are documented in the notebook and shared source files.
+
+## Evaluation and Results
+
+Competition closed — evaluated on a held-out split.
+
+We reserve 20% of the labeled data using a stratified split with `random_state=42`. To prevent the same normalized comment from appearing on both sides, 107 overlapping rows are removed from the development partition. This leaves **1,516 development rows** and **406 held-out rows**.
+
+Model selection uses grouped validation within the development partition with seeds 7, 21, and 42. The selected character TF-IDF model is then trained on the development partition and evaluated on the held-out data.
+
+| Selected model | Mean per-rule ROC-AUC | Overall ROC-AUC | Accuracy | F1 |
+|---|---:|---:|---:|---:|
+| Character TF-IDF + Logistic Regression | **0.8210** | 0.8199 | 0.7414 | 0.7586 |
+
+The primary local metric is the equally weighted mean of the ROC-AUC values for the two rules. Accuracy and F1 use a probability threshold of 0.5.
+
+**These are local evaluation results, not official Kaggle public or private scores.** No official Kaggle submission score is currently reported. Earlier exploratory work used the full labeled dataset, so the held-out partition is not historically untouched. The evaluation also does not establish generalization to unseen rules.
+
+Result files are available in [`submissions/`](submissions/):
+
+- [`heldout_metrics.csv`](submissions/heldout_metrics.csv): held-out metrics and split sizes.
+- [`heldout_per_rule.csv`](submissions/heldout_per_rule.csv): rule-level AUC values.
+- [`development_results.csv`](submissions/development_results.csv): development validation results.
+- [`heldout_score.png`](submissions/heldout_score.png): a visualization of the local results.
+
+## Project Layout
+
+```text
+.
+├── README.md
+├── requirements.txt
+├── .gitignore
+├── assignment1_eda_baseline.ipynb
+├── src/
+│   ├── __init__.py
+│   ├── data.py
+│   ├── models.py
+│   ├── utils.py
+│   └── eda.py
+├── submissions/
+│   ├── README.md
+│   ├── development_results.csv
+│   ├── heldout_metrics.csv
+│   ├── heldout_per_rule.csv
+│   └── heldout_score.png
+└── train_baseline.py
+```
+
+The notebook contains the analysis, explanations, plots, and final evaluation. Reusable functions are imported from `src/`. `train_baseline.py` retains the earlier exploratory comparison; it does not generate the notebook's separate held-out report.
+
+## Running the Project
+
+### Local execution
+
+Download and extract the repository, then place the three CSV files in `data/`. From the project root, run:
 
 ```powershell
 python -m venv .venv
@@ -23,65 +99,18 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m jupyter notebook assignment1_eda_baseline.ipynb
 ```
 
-On Linux/macOS, use `.venv/bin/python` as the Python executable. Run the notebook from beginning to end and save its plots and tables. The submitted notebook includes saved outputs.
+On Linux/macOS, use `python3` to create the environment and `.venv/bin/python` for the remaining commands.
 
-**Google Colab:** Upload and open `assignment1_eda_baseline.ipynb`. When prompted by the first cell, upload `GROUP34_CENG313_teslim.zip`. When prompted by the data-loading cell, upload all three CSV files together. The first code cell extracts only the shared source files and requirements from the package. A CPU runtime is sufficient. After execution, use **File → Download → Download .ipynb** to save the notebook with its outputs.
+Run all notebook cells in order. The notebook includes saved outputs and can also be read without execution. Running it regenerates the evaluation files in `submissions/` and creates `outputs/submission.csv` for the available sample test rows.
 
-## Repository structure
+### Google Colab
 
-```text
-assignment1_eda_baseline.ipynb   # Executed EDA, baseline, and held-out evaluation
-requirements.txt
-.gitignore
-src/
-  __init__.py
-  data.py                      # Data loading, text preparation, and splits
-  models.py                    # Models and development-set comparison
-  utils.py                     # Evaluation helpers
-  eda.py                       # Exploratory plots
-submissions/
-  heldout_metrics.csv
-  heldout_per_rule.csv
-  development_results.csv
-  heldout_score.png
-  README.md
-train_baseline.py              # Earlier exploratory script using three seeds
-```
+1. Download the repository using **Code → Download ZIP** and extract it on your computer.
+2. Upload and open `assignment1_eda_baseline.ipynb` in Colab.
+3. When the setup cell prompts you, upload the downloaded repository ZIP. The setup accepts both GitHub ZIPs and the provided project package.
+4. When the data-loading cell prompts you, upload `train.csv`, `test.csv`, and `sample_submission.csv` together.
+5. Run the remaining cells using a CPU runtime, then save the notebook with its outputs using **File → Download → Download .ipynb**.
 
-The notebook contains the main submission and final evaluation. `train_baseline.py` reproduces the earlier exploratory comparison; it does not generate the separate held-out report. The Assignment 2 notebook will be prepared for the second submission.
+## Further Work
 
-## Method and results
-
-The rule and comment are combined into a single text input. Missing text values are replaced with empty strings. We compare a Dummy classifier, word TF-IDF with Logistic Regression, and character TF-IDF with Logistic Regression. TF-IDF is fitted only on the corresponding training partition. Detailed parameters and preprocessing decisions are documented in the notebook and `src/models.py`.
-
-Competition closed — evaluated on a held-out split.
-
-**No official Kaggle score is available.** Late-submission access has not been verified through the team's account. Since labeled hidden test data is unavailable, we report the following local held-out result; it is not an official competition score.
-
-| Model | Held-out rows | Mean per-rule AUC | ROC-AUC | Accuracy | F1 |
-|---|---:|---:|---:|---:|---:|
-| char_logistic | 406 | 0.8210 | 0.8199 | 0.7414 | 0.7586 |
-
-A fixed 20% test partition is created with `random_state=42`, stratified by the target. We remove 107 rows from the training side whose normalized comment text also appears in the test partition, leaving 1,516 development rows. Model selection uses grouped validation splits within the development partition only.
-
-Earlier project versions explored the entire dataset, so this test partition cannot be considered historically untouched. In the revised workflow, the held-out score is not used for model selection. This evaluation does not measure generalization to unseen rules.
-
-[Score visualization](submissions/heldout_score.png) · [Metrics](submissions/heldout_metrics.csv) · [Per-rule results](submissions/heldout_per_rule.csv)
-
-### Comparison with published competition results
-
-The [fifth-place solution report](https://www.kaggle.com/competitions/jigsaw-agile-community-rules/writeups/5th-place-solution-diverse-ensemble) reports a **public leaderboard score of 0.92084** for one LLaMA component. The numerical difference from our local result is **0.0999 AUC points**. This component score is not the team's final ensemble score or the winning score.
-
-The winner's [first-place solution report](https://www.kaggle.com/competitions/jigsaw-agile-community-rules/writeups/1st-place-solution) reports a final ensemble **public score of 0.9344** and **private score of 0.9293**. The numerical difference between its public score and our local mean per-rule AUC is **0.1134 points**.
-
-These comparisons use different evaluation datasets and therefore do not establish a direct performance gap on the same test set. Only published scores were used for comparison; no public notebook code or cells were copied.
-
-## Account and submission steps still required
-
-- Accept the organization invitation and transfer the repository to `ceng313-2026/GROUP34_CENG313`.
-- Verify that both members have Write access and meaningful contribution commits.
-- Remove the old `src/__pycache__/` directory from the current GitHub file tree.
-- If late submission is accessible, add the official score and a screenshot. The current report uses local evaluation because labeled hidden test data is unavailable.
-- After updating all files, tag the final submission commit as `assignment1`.
-
-**Assignment 1 deadline:** November 13, 2026, 23:59. **Assignment 2 deadline:** December 30, 2026, 23:59. Organization membership, repository tags, and contribution history cannot be verified from this file package.
+Future experiments will investigate the use of example comments, alternative text representations, and evaluation on unseen rules or communities. These extensions will be developed for Assignment 2.
