@@ -1,2 +1,0 @@
-model,seed,development_rows,heldout_rows,removed_overlap,roc_auc,mean_rule_auc,accuracy,f1
-char_logistic,42,1516,406,107,0.8199029126213592,0.8209573611588448,0.7413793103448276,0.7586206896551724
