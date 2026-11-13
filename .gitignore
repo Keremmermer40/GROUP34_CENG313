@@ -1,0 +1,15 @@
+data/
+Data.zip
+data.zip
+outputs/
+jigsaw_colab.zip
+jigsaw_outputs.zip
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.env
+.idea/
+.DS_Store
+Thumbs.db
