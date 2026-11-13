@@ -1,130 +1,163 @@
-# GROUP34_CENG313 — Jigsaw: Community Rule Violation Prediction
+﻿# GROUP34_CENG313 — Jigsaw: Community Rule Violation Prediction
 
-Bu proje, bir Reddit yorumunun verilen topluluk kuralını ihlal etme olasılığını tahmin eder.
-CENG313 dersi Assignment 1 kapsamında başlangıç modelleri ve yerel doğrulama sonuçları sunulur.
+Bu projede bir Reddit yorumunun verilen topluluk kuralını ihlal etme olasılığını tahmin ediyoruz. Hedef değişken `rule_violation`: `1` ihlal, `0` ihlal yok.
 
-- **Kaggle yarışması:** [Jigsaw – Agile Community Rules](https://www.kaggle.com/competitions/jigsaw-agile-community-rules)
-- **Colab notebook:** [Notebook'u Google Colab'da aç](https://colab.research.google.com/drive/1EiCsKMU84Mmgpvb7a2x8FNm7ajzNoT56)
-- **Notebook dosyası:** [assignment1_eda_baseline.ipynb](assignment1_eda_baseline.ipynb)
-- **Veri paketi:** [Data.zip](Data.zip)
+- **Ders:** CENG313 — Introduction to Data Science
+- **Grup:** 34
+- **Yarışma:** [Jigsaw — Agile Community Rules](https://www.kaggle.com/competitions/jigsaw-agile-community-rules)
+- **Ders yönergesi:** [ceng313-2026](https://github.com/ceng313-2026)
 
 ## Grup üyeleri
 
-| Grup | Ad soyad | Öğrenci numarası | GitHub kullanıcı adı |
+| Ad soyad | Öğrenci numarası | GitHub kullanıcı adı |
+|---|---|---|
+| Hacı Kerem Meremr | 23118080769 | [Keremmermer40](https://github.com/Keremmermer40) |
+| Necdet Atakan Aydın | 24118080793 | [necdetatakanaydin](https://github.com/necdetatakanaydin) |
 
-| 34 | Hacı Kerem Meremr | 23118080769| Keremmermer40 |
-| 34 | Necdet Atakan Aydın | 24118080793 | necdetatakanaydin |
+## Veri kaynağı ve indirme
 
-## Veri seti
+1. Kaggle hesabınızla yarışma sayfasındaki kuralları kabul edin.
+2. Yarışmanın **Data** sekmesinden verileri indirin.
+3. İndirilen arşivi açıp CSV dosyalarını proje kökündeki `data/` klasörüne yerleştirin:
 
-Veri kaynağı yukarıdaki Kaggle yarışmasıdır. `Data.zip` paketinde aşağıdaki CSV dosyaları bulunmalıdır:
+```text
+data/
+├── train.csv
+├── test.csv
+└── sample_submission.csv
+```
 
-| Dosya | İçerik |
+Veriler ve veri içeren ZIP paketleri GitHub'a yüklenmemelidir. `.gitignore` bu dosyaları dışlar; önceden Git takibine alınmış dosyalar ayrıca takipten çıkarılmalıdır.
 
-| `train.csv` | Yorumlar, kurallar, örnek yorumlar, subreddit ve hedef etiket |
-| `test.csv` | Etiketi bulunmayan test yorumları |
-| `sample_submission.csv` | Beklenen tahmin sütunları ve satır sırası |
+Mevcut yerel eğitim dosyası **2.029**, test dosyası **10** satırdır. Bu test dosyası örnek test verisidir. Etiketleri bulunmadığından bu 10 satır üzerinden başarı metriği hesaplanmaz.
 
-Mevcut çalıştırmada eğitim verisi **2.029**, test verisi **10** satırdır.
-Bu test dosyası örnek test verisidir; tam gizli yarışma testindeki başarıyı göstermez.
+| Sütun | Açıklama |
+|---|---|
+| `row_id` | Satır kimliği |
+| `body` | Değerlendirilen Reddit yorumu |
+| `rule` | Yorumun değerlendirileceği kural |
+| `subreddit` | Yorumun ait olduğu topluluk |
+| `positive_example_1`, `positive_example_2` | Kuralı ihlal eden örnekler |
+| `negative_example_1`, `negative_example_2` | Kuralı ihlal etmeyen örnekler |
+| `rule_violation` | Yalnızca eğitim verisinde bulunan hedef etiket |
 
-Temel sütunlar:
+## Proje yapısı
 
-- `row_id`: Satır kimliği.
-- `body`: Değerlendirilen Reddit yorumu.
-- `rule`: Yorumun değerlendirileceği topluluk kuralı.
-- `subreddit`: Yorumun ait olduğu topluluk.
-- `positive_example_1`, `positive_example_2`: Kuralı ihlal eden örnekler.
-- `negative_example_1`, `negative_example_2`: Kuralı ihlal etmeyen örnekler.
-- `rule_violation`: Eğitim hedefi; `1` ihlal, `0` ihlal yok.
+Mevcut dosyalar:
 
-## Yaklaşım
+```text
+.
+├── README.md
+├── requirements.txt
+├── .gitignore
+├── train_baseline.py          # Yerel eğitim ve değerlendirme
+├── assignment1_colab.ipynb    # src/ kodunu çalıştıran Colab yardımcısı
+├── jigsaw_colab.ipynb         # Kodun hücrelerde bulunduğu alternatif notebook
+├── prepare_colab.py          # Yerel Colab paketi hazırlama
+├── src/
+│   ├── __init__.py
+│   ├── data.py               # Veri okuma, metin hazırlama ve bölme
+│   ├── models.py             # Baseline modelleri
+│   └── utils.py              # Metrikler ve tablo yazdırma
+├── submissions/              # Skor kanıtları
+├── data/                     # Yalnızca yerel veri
+└── outputs/                  # Üretilen sonuçlar
+```
 
-Başlangıç modellerinde kural ve yorum metni
-`RULE: <kural> COMMENT: <yorum>` biçiminde birleştirilir.
-Subreddit ve örnek yorum sütunları mevcut modellerde kullanılmaz.
+**Teslim notebook'u henüz hazır değildir.** İstenen `assignment1_eda_baseline.ipynb`; problem tanımı, veri özeti, yorumlu EDA grafikleri, ön işleme gerekçeleri, baseline değerlendirmesi, skor kanıtı ve sonuç bölümlerini içermelidir. Ortak kod `src/` üzerinden kullanılmalıdır. Mevcut Colab yardımcıları bu teslimin yerine geçmez. İkinci teslim için `assignment2_solution.ipynb` hazırlanacaktır.
 
-Üç model karşılaştırılır:
+## Yerelde çalıştırma
 
-1. **DummyClassifier:** Eğitim sınıf oranlarına dayalı referans (`strategy="prior"`).
-2. **Kelime TF-IDF + Logistic Regression:** 1–2 kelimelik n-gramlar.
-3. **Karakter TF-IDF + Logistic Regression:** `char_wb` ile 3–5 karakterlik n-gramlar.
+Verileri `data/` klasörüne koyduktan sonra proje kökünde çalıştırın.
 
-İki TF-IDF modelinde `min_df=2` ve en fazla 30.000 özellik;
-Logistic Regression için `max_iter=1000` ve `random_state=42` kullanılır.
+Windows PowerShell:
 
-## Doğrulama ve değerlendirme
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe train_baseline.py
+```
 
-Aynı yorumun eğitim ve doğrulamada birlikte bulunmasını engellemek için yorumlar küçük harfe
-çevrilip kenar boşlukları temizlenerek gruplandırılır. `GroupShuffleSplit` ile yaklaşık
-%80 eğitim ve %20 doğrulama ayrılır. Deneyler **7, 21 ve 42** tohumlarında tekrarlanır.
-TF-IDF her ayrımda yalnız eğitim bölümünde öğrenilir.
+Linux/macOS:
 
-Raporlanan ölçütler genel ROC-AUC, ortalama kural ROC-AUC, accuracy ve F1'dır.
-Ortalama kural ROC-AUC, her kuralın AUC değerinin eşit ağırlıklı ortalamasıdır.
-Accuracy ve F1 için olasılık eşiği **0,5** kullanılır.
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python train_baseline.py
+```
 
-## Sonuçlar
+Betik proje klasörünü kendi konumundan belirler. Gerekli paketler `requirements.txt` dosyasında listelenmiştir.
 
-Üç veri ayrımındaki yerel doğrulama sonuçlarının ortalaması:
+### Google Colab
+
+Mevcut `src/` tabanlı çalıştırma yardımcısını kullanmak için:
+
+1. Verileri yerelde `data/` klasörüne koyun ve `python prepare_colab.py` çalıştırın.
+2. Oluşan `assignment1_colab.ipynb` dosyasını Colab'da açın.
+3. İlk yükleme hücresinde yerelde oluşan `jigsaw_colab.zip` dosyasını seçin.
+4. CPU çalışma zamanında hücreleri sırayla çalıştırın ve sonuç paketini indirin.
+
+Bu ZIP veri içerir; kişisel çalıştırma içindir ve repoya eklenmemelidir. Sonuç paketini indirmek notebook'u kaydetmez. Notebook çıktıları ayrıca kaydedilmelidir.
+
+## Baseline yaklaşımı
+
+`body` ve `rule` sütunlarındaki eksik metinler boş dizeyle doldurulur. Model girdisi `RULE: <kural> COMMENT: <yorum>` biçimindedir. Subreddit ve örnek yorum sütunları mevcut modellerde kullanılmaz.
+
+Üç model aynı veri ayrımlarında karşılaştırılır:
+
+| Model | Ayarlar |
+|---|---|
+| DummyClassifier | `strategy="prior"`; sınıf oranına dayalı referans |
+| Kelime TF-IDF + Logistic Regression | 1–2 kelimelik n-gramlar |
+| Karakter TF-IDF + Logistic Regression | `char_wb`, 3–5 karakterlik n-gramlar |
+
+İki TF-IDF modelinde `min_df=2` ve `max_features=30000`; Logistic Regression için `max_iter=1000`, `random_state=42` kullanılır. TF-IDF yalnızca ilgili eğitim bölümünde öğrenilir.
+
+## Yerel doğrulama sonuçları
+
+Yorumlar küçük harfe çevrilip kenar boşlukları temizlenerek gruplandırılır. `GroupShuffleSplit`, aynı normalize edilmiş yorumun eğitim ve doğrulamaya birlikte girmesini önler. Yaklaşık %80 eğitim ve %20 doğrulama ayrımı **7, 21 ve 42** tohumlarıyla tekrarlanır.
+
+Aşağıdaki değerler mevcut `outputs/results.csv` dosyasındaki üç ayrımın ortalamasıdır:
 
 | Model | ROC-AUC | Ortalama kural AUC | Accuracy | F1 |
-||---:|---:|---:|---:|
+|---|---:|---:|---:|---:|
 | Dummy | 0.5000 | 0.5000 | 0.4894 | 0.6570 |
-| Kelime TF-IDF + Logistic Regression | 0.8068 | 0.7948 | 0.7173 | 0.7254 |
-| Karakter TF-IDF + Logistic Regression | 0.8140 | **0.8006** | 0.7082 | 0.7137 |
+| Kelime TF-IDF + Logistic Regression | 0.8068 | 0.7948 | **0.7173** | **0.7254** |
+| Karakter TF-IDF + Logistic Regression | **0.8140** | **0.8006** | 0.7082 | 0.7137 |
 
-Karakter modeli ortalama kural AUC ölçütüne göre seçilir ve tüm eğitim verisiyle tekrar eğitilir.
-Kelime modeli accuracy ve F1 bakımından daha iyi sonuç verir.
-Test yorumları için ihlal olasılıkları `submission.csv` dosyasına yazılır.
+Ortalama kural AUC, kural başına ROC-AUC değerlerinin eşit ağırlıklı ortalamasıdır; tek sınıf içeren grupların AUC'si tanımsız bırakılır. Accuracy ve F1 için eşik `0.5`'tir. Kod ortalama kural AUC'ye göre karakter modelini seçer ve tüm eğitim verisiyle yeniden eğitir.
 
-Bu sonuçlar **yerel doğrulama sonuçlarıdır; resmi Kaggle skoru değildir.**
-Rastgele bölmeler örtüşebilir ve model seçiminde de kullanılır; bağımsız test sonucu sayılmaz.
-Bu yöntem görülmemiş kurallara genellemeyi ölçmez. Test etiketleri olmadığı için
-10 örnek test satırı üzerinde başarı metriği hesaplanmaz.
+Bu değerler **yerel doğrulama sonuçlarıdır; resmi Kaggle skoru değildir.** Ayrımlar örtüşebilir ve model seçiminde de kullanılır. Bağımsız test başarısını veya görülmemiş kurallara genellemeyi ölçmez.
 
-## Google Colab'da çalıştırma
+### Kaggle skoru ve değerlendirme kanıtı
 
-1. Yukarıdaki Colab bağlantısını açın veya `assignment1_eda_baseline.ipynb` dosyasını
-   indirip Colab'da **File → Upload notebook** ile açın.
-2. Repodaki `Data.zip` dosyasını indirip **bilgisayarınızda ZIP'ten çıkarın**.
-3. CPU çalışma zamanı kullanarak notebook hücrelerini sırayla çalıştırın.
-4. Veri yükleme hücresi dosya istediğinde **`train.csv`, `test.csv` ve
-   `sample_submission.csv` dosyalarını birlikte seçin**.
-   Mevcut hücre ZIP dosyasını doğrudan açmaz; bu aşamada `Data.zip` seçmeyin.
-5. Eğitim ve değerlendirme hücrelerini çalıştırıp sonuç tablosunu inceleyin.
-6. Son hücreyle `jigsaw_outputs.zip` sonuç paketini indirin.
+Bu repoda doğrulanabilir Kaggle skor kanıtı bulunmuyor. Skor alındığında tarih ve ekran görüntüsü `submissions/` altında paylaşılmalı; public/private skorlar burada belirtilmelidir.
 
-Gerekli kütüphaneler notebook'un ilk hücresinde kurulur: `pandas` ve `scikit-learn`.
-Colab oturum diski geçicidir. Sonuç ZIP'ini indirmek notebook'u kaydetmez;
-çıktıların göründüğü notebook'u ayrıca kaydedin.
+Late submission kullanılamıyorsa yönergedeki sabit %20 held-out değerlendirmesi ayrıca tamamlanmalı ve yarışma metriğiyle liderlik tablosuna kıyaslanmalıdır. Mevcut model seçimi bu bağımsız değerlendirme olarak sunulmaz. Bu yol tamamlandığında yönergede istenen “Competition closed — evaluated on a held-out split.” açıklaması eklenmelidir.
 
 ## Üretilen dosyalar
 
-- `outputs/results.csv`: Model ve tohum başına doğrulama metrikleri.
-- `outputs/per_rule.csv`: Kural bazında AUC değerleri.
-- `outputs/submission.csv`: Test yorumları için ihlal olasılıkları.
-- `jigsaw_outputs.zip`: Bu sonuç dosyalarının indirme paketi.
-
-## Assignment 1 durumu
-
-Mevcut notebook baseline modellerini ve sonuçlarını içerir.
-Teslimin EDA bölümünü tamamlamak için veri boyutu/türleri, eksik değerler,
-tekrarlar, hedef dağılımı, kural ve subreddit dağılımları ile yorum uzunlukları
-tablolar, grafikler ve kısa yorumlarla notebook'a eklenmelidir.
-
-Ders yönergesindeki ortak kod şartı için tekrar kullanılan fonksiyon ve sınıflar
-aynı repodaki `.py` dosyalarına taşınmalı ve notebook bu dosyaları kullanmalıdır.
-Mevcut paylaşılan notebook fonksiyonları kendi hücrelerinde tanımlar.
-
-## İlerleme günlüğü
-
-| Tarih | Çalışma |
+| Dosya | İçerik |
 |---|---|
-| 26 Ekim 2026 | İlk proje yüklemesi ve `.gitignore` düzenlemesi |
-| 29 Ekim 2026 | Proje dosyaları ve verilerin eklenmesi |
-| 7 Kasım 2026 | Baseline karşılaştırması ve Colab çalıştırma hazırlığı |
-| 7 Kasım 2026 | GitHub teslimi için README hazırlığı |
+| `outputs/results.csv` | Model ve tohum başına doğrulama metrikleri |
+| `outputs/per_rule.csv` | Kural bazında AUC değerleri |
+| `outputs/submission.csv` | Test satırları için ihlal olasılıkları |
+| `jigsaw_outputs.zip` | Colab yardımcısının indirdiği sonuç paketi |
 
-Günlük geliştirme ilerledikçe güncellenecektir. Yeni çalışmalar anlamlı commit mesajlarıyla kaydedilmelidir.
+`submission.csv` üretimi Kaggle'a gönderim yapıldığı anlamına gelmez. Kod test ve örnek gönderimdeki `row_id` sırasını kontrol eder.
 
+## Teslim kontrolü
+
+[Ders yönergesine](https://github.com/ceng313-2026) ve Classroom duyurusuna göre:
+
+- [ ] Kullanıcı adları ve grup bilgileri asistana iletildi; organizasyon davetleri kabul edildi.
+- [ ] Repo `ceng313-2026` organizasyonuna `GROUP34_CENG313` adıyla taşındı; üyelerin yazma erişimi doğrulandı.
+- [ ] Veri ve veri içeren ZIP dosyaları güncel teslim ağacından çıkarıldı.
+- [ ] `assignment1_eda_baseline.ipynb` tamamlandı ve baştan çalıştırılarak çıktıları kaydedildi.
+- [ ] Kaggle skor kanıtı veya yönergedeki held-out değerlendirmesi eklendi.
+- [ ] Her üyenin anlamlı katkıları commit geçmişinde görünüyor.
+- [ ] Son teslim commit'i `assignment1` etiketiyle organizasyondaki repoya gönderildi.
+
+**Assignment 1 son teslim:** 13 Kasım 2026, 23:59. **Assignment 2 son teslim:** 30 Aralık 2026, 23:59. Organizasyon dışındaki repolar değerlendirilmiyor.
+
+Kaggle notebook veya hücreleri kopyalanmamalıdır. Yararlanılan fikirlerin kaynakları notebook'ta belirtilmeli ve her üye kodu açıklayabilmelidir.
